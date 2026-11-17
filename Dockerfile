@@ -4,8 +4,9 @@ FROM php:8.3-apache
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libicu-dev \
     libonig-dev \
+    libpq-dev \
     unzip \
-    && docker-php-ext-install -j$(nproc) pdo_mysql mbstring bcmath intl \
+    && docker-php-ext-install -j$(nproc) pdo_mysql pdo_pgsql mbstring bcmath intl \
     && a2enmod rewrite headers \
     && rm -rf /var/lib/apt/lists/*
 
