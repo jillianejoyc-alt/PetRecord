@@ -1,122 +1,95 @@
-# Paw Ledger Pet Record Management
+# StudentRecord Management System
 
-A small Laravel-based pet registry for recording pet profiles and owner contact details. It includes a dashboard, searchable and paginated records, full CRUD, MySQL migrations, and a Docker setup for deployment to Render.
+A Laravel application dedicated to maintaining student profiles and academic records. The application database contains only the `students` table; it does not use user accounts, cache, session, or job tables.
 
 ## Features
 
-- Dashboard totals for all pets, dogs, cats, and other pets, plus recently registered records.
-- Add, view, edit, and delete pet records.
-- Search by pet name or owner name.
-- Server-side validation, CSRF protection, escaped output, prepared database queries through Laravel, and success/error feedback.
-- Responsive Bootstrap 5 interface with reusable Blade layout components.
-- MySQL support for local XAMPP use and external managed databases in production.
+- Dashboard totals for students, male and female students, and distinct courses, plus recently added students.
+- Add, view, edit, and delete student records.
+- Search by student number, first/middle/last name, or course.
+- Validated forms, unique student numbers, CSRF protection, and success/error feedback.
+- Responsive purple and navy Bootstrap interface.
+- MySQL/MariaDB for local development and PostgreSQL or MySQL for deployment.
 
-## Technology
+## Local Setup
 
-- PHP 8.2+ and Laravel 12
-- MySQL 8+ or MariaDB
-- Bootstrap 5, HTML, CSS, and JavaScript
-- Apache and Docker for Render deployment
-
-## Local Setup with XAMPP
-
-1. Install XAMPP with PHP 8.2 or newer and MySQL. Install Composer separately if it is not already available.
-2. Clone or download this repository into your development folder. From the project root, install dependencies:
+1. Install PHP 8.2+, Composer, and MySQL/MariaDB. To use SQLite instead, set `DB_CONNECTION=sqlite` and `DB_DATABASE=database/database.sqlite`.
+2. Install dependencies and configure the app:
 
    ```sh
    composer install
-   ```
-
-3. Start Apache and MySQL in the XAMPP Control Panel. Create an empty database named `pet_record_db` in phpMyAdmin.
-4. Configure the app environment:
-
-   ```sh
    copy .env.example .env
    php artisan key:generate
    ```
 
-   On macOS/Linux, use `cp .env.example .env`. Set `DB_HOST=127.0.0.1`, `DB_PORT=3306`, `DB_DATABASE=pet_record_db`, and the local MySQL username/password in `.env`.
-5. Create the tables with Laravel migrations:
+3. Create an empty local database named `student_record_db` and configure `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, and `DB_PASSWORD` in `.env`.
+4. Create the tables and launch the app on port 8002:
 
    ```sh
    php artisan migrate
+   php artisan serve --host=127.0.0.1 --port=8002
    ```
 
-   The recommended app setup is migrations from an empty database. `database.sql` is a standalone schema import for the `pets` table; do not import it and then run the pets migration, as that creates the pets table twice. The SQL import does not create Laravel's queue, cache, sessions, or migrations tables.
-6. Launch the development server and open the shown URL:
+   Open [http://127.0.0.1:8002](http://127.0.0.1:8002).
 
-   ```sh
-   php artisan serve
-   ```
-
-   You can also serve the `public` directory with XAMPP Apache after configuring a virtual host whose document root points to this project's `public` folder.
+The only application migration creates the `students` table. `database.sql` is an optional MySQL/MariaDB schema for manual setup; use either the SQL file or Laravel migrations, not both on the same database. Sessions and cache are stored in files, and queues run synchronously, so no additional database tables are required.
 
 ## Tests
-
-Run the application test suite with:
 
 ```sh
 php artisan test
 ```
 
-Feature tests use an in-memory SQLite database and cover dashboard counts, record creation, search, update, deletion, and validation.
+The feature tests use an in-memory SQLite database and cover CRUD, search, validation, uniqueness, and dashboard metrics.
 
-## GitHub Upload
+## GitHub
 
-1. Review `git status` and confirm `.env` is not staged. `.gitignore` excludes environment files, dependencies, and generated assets.
-2. Create an empty repository on GitHub, then initialize and push this project:
+Create an empty GitHub repository named `StudentRecord`, then push the project:
 
-   ```sh
-   git init
-   git add .
-   git commit -m "Build pet record management system"
-   git branch -M main
-   git remote add origin https://github.com/YOUR-USERNAME/YOUR-REPOSITORY.git
-   git push -u origin main
-   ```
+```sh
+git init
+git add .
+git commit -m "Initial StudentRecord System"
+git branch -M main
+git remote add origin YOUR_GITHUB_REPOSITORY_URL
+git push -u origin main
+```
 
-3. Never commit `.env`, database passwords, API keys, or production secrets. Use GitHub's repository secrets for any CI workflows that need credentials.
+For future updates:
 
-## Screenshots
+```sh
+git add .
+git commit -m "Update StudentRecord"
+git push
+```
 
-Add project screenshots here after running the application, for example:
-
-- `docs/screenshots/dashboard.png`
-- `docs/screenshots/pet-records.png`
-- `docs/screenshots/pet-details.png`
+Never commit `.env`, database passwords, API keys, or other secrets.
 
 ## Render Deployment
 
-Render does not provide a persistent MySQL database with a Web Service. Create a MySQL database with an external managed provider that permits connections from Render, and have its database/schema ready before deploying.
-
-1. Push this repository to GitHub.
-2. In Render, create a **Web Service** from the repository and select **Docker** as the runtime. The included `Dockerfile` builds PHP 8.3 with Apache and `pdo_mysql`; Apache serves Laravel's `public` directory.
-3. Add these environment variables in Render. Set values from your database provider; do not use `localhost` for the production database host.
+1. Push the repository to GitHub and create a Render **Web Service** from it using the **Docker** runtime. The root `Dockerfile` installs both PostgreSQL and MySQL PDO drivers, configures Apache to serve Laravel's `public` directory, and runs migrations when the container starts.
+2. Configure the service environment in Render:
 
    | Variable | Value |
    | --- | --- |
    | `APP_ENV` | `production` |
    | `APP_DEBUG` | `false` |
-   | `APP_KEY` | Output of `php artisan key:generate --show` from a local checkout |
-   | `APP_URL` | Your Render service URL |
-   | `DB_CONNECTION` | `mysql` |
-   | `DB_HOST` | External database hostname |
-   | `DB_PORT` | Provider's MySQL port, usually `3306` |
-   | `DB_DATABASE` | External database/schema name |
-   | `DB_USERNAME` | Database username |
-   | `DB_PASSWORD` | Database password |
+   | `APP_KEY` | A generated Laravel key (`php artisan key:generate --show`) |
+   | `APP_URL` | The deployed Render service URL |
+   | `DB_CONNECTION` | `pgsql` when using Render PostgreSQL |
+   | `DATABASE_URL` | The Render PostgreSQL internal connection string |
 
-4. Deploy the service. At container startup, the entrypoint runs `php artisan migrate --force` against the configured database and starts Apache on Render's assigned `PORT` (falling back to `10000` for local container use).
-5. Check the Render deployment logs for a successful migration and visit the service URL.
-
-Use Laravel migrations for production setup; do not import `database.sql` as well. If the database provider requires SSL, configure the provider's recommended PDO/MySQL SSL settings using Render environment variables and update `config/database.php` as required by that provider. Restrict the external database's allowed connections according to its provider documentation.
+   Keep secrets in Render's environment settings. For an external MySQL database, set `DB_CONNECTION=mysql` and configure `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, and `DB_PASSWORD` instead.
+3. Deploy and check the service logs for a successful migration. The container entrypoint uses Render's assigned `PORT`; port 8002 is for local development only.
 
 ## Project Structure
 
-- `app/Http/Controllers/PetController.php` - dashboard queries and pet CRUD actions.
-- `app/Models/Pet.php` - pet record model.
-- `database/migrations/` - Laravel schema migrations.
-- `database.sql` - standalone MySQL schema for manual setup.
-- `resources/views/` - dashboard, records, form, and shared layout templates.
+- `app/Http/Controllers/StudentController.php` - dashboard queries and student CRUD actions.
+- `app/Models/Student.php` - student record model.
+- `database/migrations/` - the student-only Laravel schema migration.
+- `database.sql` - optional standalone MySQL/MariaDB schema.
+- `resources/views/students/` - student list, form, and details templates.
+- `resources/views/` - dashboard and shared layout templates.
 - `public/assets/` - custom CSS and JavaScript.
 - `Dockerfile`, `docker-entrypoint.sh` - Render-compatible runtime.
+"# StudentRecord" 
